@@ -2,7 +2,7 @@ import Quartz
 import Foundation
 
 @MainActor
-final class QuickLookController: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDelegate {
+final class QuickLookController: NSObject, @preconcurrency QLPreviewPanelDataSource, QLPreviewPanelDelegate {
     static let shared = QuickLookController()
     private var url: URL?
 

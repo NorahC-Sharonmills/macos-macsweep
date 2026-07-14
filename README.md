@@ -1,6 +1,8 @@
-# 🧹 Mac Deep Cleaner
+
 
 <div align="center">
+
+# 🧹 Mac Deep Cleaner
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![macOS](https://img.shields.io/badge/macOS-14.0+-brightgreen.svg)

@@ -347,9 +347,7 @@ struct ItemListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(title).font(.largeTitle.bold())
-                Spacer()
+            ColorfulHeader(title: title, subtitle: subtitle, icon: headerIcon, tint: headerTint) {
                 Picker("Sort", selection: $sort) {
                     ForEach(SortOption.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
@@ -369,6 +367,33 @@ struct ItemListView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Review the list first. Files marked Do Not Delete are blocked.")
+        }
+    }
+
+    private var subtitle: String {
+        switch title {
+        case "Storage Analyzer": "Find large files by metadata first. Review before cleaning."
+        case "Cache": "Grouped cache and logs. Parent folders stay intact."
+        case "Developer": "Xcode, Node, Python, Homebrew, Unity data with risk labels."
+        default: "Review files before moving anything to Trash."
+        }
+    }
+
+    private var headerIcon: String {
+        switch title {
+        case "Storage Analyzer": "externaldrive.fill"
+        case "Cache": "tray.fill"
+        case "Developer": "hammer.fill"
+        default: "folder.fill"
+        }
+    }
+
+    private var headerTint: Color {
+        switch title {
+        case "Storage Analyzer": .blue
+        case "Cache": .teal
+        case "Developer": .orange
+        default: .indigo
         }
     }
 }

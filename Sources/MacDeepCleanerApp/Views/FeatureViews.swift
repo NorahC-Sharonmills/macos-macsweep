@@ -8,9 +8,7 @@ struct LargeFilesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Large Files").font(.largeTitle.bold())
-                Spacer()
+            ColorfulHeader(title: "Large Files", subtitle: "Filter big files by size and age. Old never means junk.", icon: "doc.zipper", tint: .orange) {
                 Picker("Size", selection: $viewModel.selectedLargeThreshold) {
                     Text("> 100 MB").tag(Int64(100 * 1024 * 1024))
                     Text("> 500 MB").tag(Int64(500 * 1024 * 1024))
@@ -27,6 +25,11 @@ struct LargeFilesView: View {
                 Button("Scan", systemImage: "magnifyingglass", action: viewModel.scanLargeFiles)
                 Button("Move to Trash", systemImage: "trash") { confirmingClean = true }
                     .disabled(viewModel.selectedItems.isEmpty)
+            }
+            HStack(spacing: 10) {
+                ColorStat(title: "Files", value: "\(viewModel.largeFiles.count)", icon: "number", tint: .orange)
+                ColorStat(title: "Total", value: ByteFormatting.string(viewModel.largeFiles.reduce(0) { $0 + $1.size }), icon: "sum", tint: .pink)
+                ColorStat(title: "Threshold", value: ByteFormatting.string(viewModel.selectedLargeThreshold), icon: "slider.horizontal.3", tint: .blue)
             }
             ResultTable(items: viewModel.largeFiles, selection: $viewModel.selectedItems)
         }
@@ -52,10 +55,13 @@ struct ApplicationsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Applications").font(.largeTitle.bold())
-                Spacer()
+            ColorfulHeader(title: "Applications", subtitle: "Review installed apps and related files. Shared containers stay review-only.", icon: "app.fill", tint: .blue) {
                 Button("Scan", systemImage: "magnifyingglass", action: viewModel.scanApplications)
+            }
+            HStack(spacing: 10) {
+                ColorStat(title: "Apps", value: "\(viewModel.applications.count)", icon: "app.badge", tint: .blue)
+                ColorStat(title: "Total Size", value: ByteFormatting.string(viewModel.applications.reduce(0) { $0 + $1.size }), icon: "internaldrive", tint: .teal)
+                ColorStat(title: "Leftovers", value: "\(viewModel.applications.flatMap(\.leftovers).count)", icon: "archivebox.fill", tint: .orange)
             }
 
             HStack(spacing: 16) {
@@ -238,10 +244,13 @@ struct BackupsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("iOS Backups").font(.largeTitle.bold())
-                Spacer()
+            ColorfulHeader(title: "iOS Backups", subtitle: "Reads backup metadata only. Private backup contents are not inspected.", icon: "iphone", tint: .indigo) {
                 Button("Scan", systemImage: "magnifyingglass", action: viewModel.scanBackups)
+            }
+            HStack(spacing: 10) {
+                ColorStat(title: "Backups", value: "\(viewModel.backups.count)", icon: "iphone.gen3", tint: .indigo)
+                ColorStat(title: "Total", value: ByteFormatting.string(viewModel.backups.reduce(0) { $0 + $1.size }), icon: "externaldrive.fill", tint: .blue)
+                ColorStat(title: "Encrypted", value: "\(viewModel.backups.filter { $0.encrypted == true }.count)", icon: "lock.fill", tint: .green)
             }
             Table(viewModel.backups) {
                 TableColumn("Device") { Text($0.deviceName ?? "Unknown device") }
@@ -262,10 +271,13 @@ struct DuplicatesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Duplicates").font(.largeTitle.bold())
-                Spacer()
+            ColorfulHeader(title: "Duplicates", subtitle: "Size grouping, partial hash, then SHA-256. No copy is auto-selected.", icon: "doc.on.doc.fill", tint: .red) {
                 Button("Scan", systemImage: "magnifyingglass", action: viewModel.scanDuplicates)
+            }
+            HStack(spacing: 10) {
+                ColorStat(title: "Groups", value: "\(viewModel.duplicateGroups.count)", icon: "square.stack.3d.up.fill", tint: .red)
+                ColorStat(title: "Files", value: "\(viewModel.duplicateGroups.reduce(0) { $0 + $1.files.count })", icon: "doc.fill", tint: .orange)
+                ColorStat(title: "Potential", value: ByteFormatting.string(viewModel.duplicateGroups.reduce(0) { $0 + $1.size * Int64(max(0, $1.files.count - 1)) }), icon: "trash.fill", tint: .pink)
             }
             List(viewModel.duplicateGroups) { group in
                 Section("\(ByteFormatting.string(group.size)) - \(group.files.count) files") {
@@ -290,7 +302,14 @@ struct HistoryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Cleaning History").font(.largeTitle.bold())
+            ColorfulHeader(title: "Cleaning History", subtitle: "Tracks paths moved to Trash. File contents are never stored.", icon: "clock.arrow.circlepath", tint: .green) {
+                EmptyView()
+            }
+            HStack(spacing: 10) {
+                ColorStat(title: "Sessions", value: "\(viewModel.history.count)", icon: "calendar", tint: .green)
+                ColorStat(title: "Moved", value: ByteFormatting.string(viewModel.history.reduce(0) { $0 + $1.bytes }), icon: "trash.fill", tint: .teal)
+                ColorStat(title: "Files", value: "\(viewModel.history.reduce(0) { $0 + $1.paths.count })", icon: "doc.fill", tint: .blue)
+            }
             Table(viewModel.history) {
                 TableColumn("Date") { Text($0.date.formatted(date: .abbreviated, time: .shortened)) }
                 TableColumn("Category") { Text($0.category.rawValue) }
@@ -307,38 +326,45 @@ struct SettingsView: View {
     @ObservedObject var viewModel: AppViewModel
 
     var body: some View {
-        Form {
-            Section("Scanning") {
-                Toggle("Follow symbolic links", isOn: $viewModel.options.followSymbolicLinks)
-                Toggle("Scan external volumes", isOn: $viewModel.options.scanExternalVolumes)
-                Toggle("Scan network volumes", isOn: $viewModel.options.scanNetworkVolumes)
-                Toggle("Show hidden files", isOn: $viewModel.options.showHiddenFiles)
-                Toggle("Developer mode", isOn: $viewModel.options.developerMode)
-                Stepper("Old file threshold: \(viewModel.options.oldFileDays) days", value: $viewModel.options.oldFileDays, in: 1...3650)
+        VStack(alignment: .leading, spacing: 12) {
+            ColorfulHeader(title: "Settings", subtitle: "Safety-first scan scope and exclusions.", icon: "gearshape.fill", tint: .purple) {
+                EmptyView()
             }
-            Section("Safety") {
-                Toggle("Confirmation before cleaning", isOn: .constant(true))
-                Toggle("Permanent deletion", isOn: .constant(false))
-                    .disabled(true)
-                Text("Permanent deletion is intentionally disabled in this build. Trash is the default workflow.")
-                    .foregroundStyle(.secondary)
+            Form {
+                Section("Scanning") {
+                    Toggle("Follow symbolic links", isOn: $viewModel.options.followSymbolicLinks)
+                    Toggle("Scan external volumes", isOn: $viewModel.options.scanExternalVolumes)
+                    Toggle("Scan network volumes", isOn: $viewModel.options.scanNetworkVolumes)
+                    Toggle("Show hidden files", isOn: $viewModel.options.showHiddenFiles)
+                    Toggle("Developer mode", isOn: $viewModel.options.developerMode)
+                    Stepper("Old file threshold: \(viewModel.options.oldFileDays) days", value: $viewModel.options.oldFileDays, in: 1...3650)
+                }
+                Section("Safety") {
+                    Toggle("Confirmation before cleaning", isOn: .constant(true))
+                    Toggle("Permanent deletion", isOn: .constant(false))
+                        .disabled(true)
+                    Text("Permanent deletion is intentionally disabled in this build. Trash is the default workflow.")
+                        .foregroundStyle(.secondary)
+                }
+                Section("Exclusions") {
+                    TextField("Excluded folders", text: Binding(
+                        get: { viewModel.options.exclusions.folderPrefixes.joined(separator: ", ") },
+                        set: { viewModel.options.exclusions.folderPrefixes = $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
+                    ))
+                    TextField("Excluded extensions", text: Binding(
+                        get: { viewModel.options.exclusions.extensions.joined(separator: ", ") },
+                        set: { viewModel.options.exclusions.extensions = $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() } }
+                    ))
+                }
+                Section("Privacy") {
+                    Text("All scans run locally. No analytics, telemetry, uploads, or file-content indexing.")
+                        .foregroundStyle(.secondary)
+                }
             }
-            Section("Exclusions") {
-                TextField("Excluded folders", text: Binding(
-                    get: { viewModel.options.exclusions.folderPrefixes.joined(separator: ", ") },
-                    set: { viewModel.options.exclusions.folderPrefixes = $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
-                ))
-                TextField("Excluded extensions", text: Binding(
-                    get: { viewModel.options.exclusions.extensions.joined(separator: ", ") },
-                    set: { viewModel.options.exclusions.extensions = $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() } }
-                ))
-            }
-            Section("Privacy") {
-                Text("All scans run locally. No analytics, telemetry, uploads, or file-content indexing.")
-                    .foregroundStyle(.secondary)
-            }
+            .formStyle(.grouped)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.10)))
         }
-        .formStyle(.grouped)
         .padding(20)
         .background(AppBackground())
     }

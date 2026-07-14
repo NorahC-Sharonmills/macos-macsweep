@@ -29,6 +29,14 @@ Tests:
 swift test
 ```
 
+Build and install app bundle:
+
+```sh
+chmod +x build-app.sh
+./build-app.sh
+open "/Applications/Mac Deep Cleaner.app"
+```
+
 This workspace was generated on Windows, so `swift` and `xcodebuild` could not be executed here. Run the commands above on macOS.
 
 ## Full Disk Access

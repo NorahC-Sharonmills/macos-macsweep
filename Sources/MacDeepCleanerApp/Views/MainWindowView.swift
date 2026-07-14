@@ -41,8 +41,10 @@ struct MainWindowView: View {
             List(SidebarItem.allCases, selection: $selection) { item in
                 Label(item.rawValue, systemImage: item.icon)
                     .accessibilityLabel(item.rawValue)
+                    .tag(item)
             }
             .navigationTitle("Mac Deep Cleaner")
+            .navigationSplitViewColumnWidth(min: 260, ideal: 300, max: 420)
         } detail: {
             Group {
                 switch selection ?? .dashboard {

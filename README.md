@@ -16,6 +16,18 @@
 
 </div>
 
+## Local build shortcut
+
+```sh
+chmod +x build-app.sh
+./build-app.sh
+open "/Applications/Mac Deep Cleaner.app"
+```
+
+The app bundle uses `Ghost.icns` as its Finder/Dock icon.
+
+`Scan Mac` is a quick scan: cache, apps, attachments, and iOS backups. Use Storage, Large Files, Developer, or Duplicates screens for deeper scans; duplicate SHA-256 detection is intentionally slower.
+
 ---
 
 ## 🎯 The Mission

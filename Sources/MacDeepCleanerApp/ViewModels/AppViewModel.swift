@@ -62,17 +62,11 @@ final class AppViewModel: ObservableObject {
 
     func scanMac() {
         let opts = options
-        let minSize = selectedLargeThreshold
-        let oldDays = selectedOldDays
-        runScan("Scanning Mac") {
-            self.storageItems = try await Self.background { try await Self.cachedStorageScan(options: opts) }
+        runScan("Quick scanning Mac") {
             self.cacheItems = try await Self.background { try await CacheScannerService().scan(options: opts) }
             self.applications = try await Self.background { try await ApplicationScannerService().scan(options: opts) }
-            self.developerItems = try await Self.background { try await DeveloperScannerService().scan(options: opts) }
             self.attachmentItems = try await Self.background { try await AppleAttachmentScannerService().scan(options: opts) }
             self.backups = try await Self.background { try await IOSBackupScannerService().scan(options: opts) }
-            self.largeFiles = try await Self.background { try await FileScannerService().largeFiles(minimumSize: minSize, olderThanDays: oldDays, options: opts) }
-            self.duplicateGroups = try await Self.background { try await DuplicateScannerService().duplicateGroups(options: opts) }
         }
     }
 
@@ -175,5 +169,18 @@ final class AppViewModel: ObservableObject {
         let items = try await FileScannerService().scan(options: options)
         try? cache.save(items, options: options)
         return items
+    }
+
+    private static func largeFiles(from items: [ScanItem], minimumSize: Int64, olderThanDays: Int?) -> [ScanItem] {
+        let cutoff = olderThanDays.map { Calendar.current.date(byAdding: .day, value: -$0, to: Date()) ?? .distantPast }
+        return items.filter { item in
+            guard !item.isDirectory, item.size >= minimumSize else { return false }
+            guard let cutoff else { return true }
+            return (item.lastModified ?? .distantFuture) < cutoff
+        }.map {
+            var item = $0
+            item.category = .largeFiles
+            return item
+        }
     }
 }

@@ -29,7 +29,9 @@ public struct FileScannerService: CleanerScanner {
                     typeDescription: metadata.typeDescription,
                     warning: "Review manually before moving to Trash."
                 )
-                items.append(item)
+                if !metadata.isDirectory && metadata.size >= options.minimumFileSize {
+                    items.append(item)
+                }
             }
         }
         CleanerLogger.scanner.info("Storage scan finished: \(items.count, privacy: .public) items")

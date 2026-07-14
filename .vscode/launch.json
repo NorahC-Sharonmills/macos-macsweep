@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macos-macsweep}",
+            "name": "Debug MacDeepCleaner",
+            "target": "MacDeepCleaner",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MacDeepCleaner"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:macos-macsweep}",
+            "name": "Release MacDeepCleaner",
+            "target": "MacDeepCleaner",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MacDeepCleaner"
+        }
+    ]
+}

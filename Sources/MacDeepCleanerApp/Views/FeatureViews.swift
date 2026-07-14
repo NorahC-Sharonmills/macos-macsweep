@@ -31,6 +31,7 @@ struct LargeFilesView: View {
             ResultTable(items: viewModel.largeFiles, selection: $viewModel.selectedItems)
         }
         .padding(20)
+        .background(AppBackground())
         .confirmationDialog("Move selected files to Trash?", isPresented: $confirmingClean) {
             Button("Move to Trash", role: .destructive) { viewModel.cleanSelected(from: viewModel.largeFiles) }
             Button("Cancel", role: .cancel) {}
@@ -77,7 +78,8 @@ struct ApplicationsView: View {
                     .listStyle(.sidebar)
                 }
                 .frame(minWidth: 320, idealWidth: 380, maxWidth: 460)
-                .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.10)))
 
                 if let selected {
                     VStack(alignment: .leading, spacing: 14) {
@@ -132,7 +134,8 @@ struct ApplicationsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .background(.background, in: RoundedRectangle(cornerRadius: 8))
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.10)))
                 } else {
                     ContentUnavailableView("Select an app", systemImage: "app")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -140,6 +143,7 @@ struct ApplicationsView: View {
             }
         }
         .padding(20)
+        .background(AppBackground())
         .onChange(of: viewModel.applications) { _, apps in
             if selectedApp == nil {
                 selectedApp = apps.first?.id
@@ -188,6 +192,7 @@ struct ApplicationRow: View {
             Spacer()
         }
         .padding(.vertical, 4)
+        .padding(.horizontal, 4)
     }
 }
 
@@ -223,7 +228,8 @@ struct AppFact: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+        .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.08)))
     }
 }
 
@@ -247,6 +253,7 @@ struct BackupsView: View {
             }
         }
         .padding(20)
+        .background(AppBackground())
     }
 }
 
@@ -261,7 +268,7 @@ struct DuplicatesView: View {
                 Button("Scan", systemImage: "magnifyingglass", action: viewModel.scanDuplicates)
             }
             List(viewModel.duplicateGroups) { group in
-                Section("\(ByteFormatting.string(group.size)) · \(group.files.count) files") {
+                Section("\(ByteFormatting.string(group.size)) - \(group.files.count) files") {
                     ForEach(group.files) { item in
                         HStack {
                             Text(item.url.path)
@@ -274,6 +281,7 @@ struct DuplicatesView: View {
             }
         }
         .padding(20)
+        .background(AppBackground())
     }
 }
 
@@ -291,6 +299,7 @@ struct HistoryView: View {
             }
         }
         .padding(20)
+        .background(AppBackground())
     }
 }
 
@@ -331,5 +340,6 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding(20)
+        .background(AppBackground())
     }
 }

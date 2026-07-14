@@ -56,33 +56,95 @@ struct ApplicationsView: View {
                 Spacer()
                 Button("Scan", systemImage: "magnifyingglass", action: viewModel.scanApplications)
             }
-            HSplitView {
-                Table(viewModel.applications, selection: $selectedApp) {
-                    TableColumn("Name") { Text($0.name) }
-                    TableColumn("Bundle ID") { Text($0.bundleIdentifier ?? "-") }
-                    TableColumn("Version") { Text($0.version ?? "-") }
-                    TableColumn("Size") { Text(ByteFormatting.string($0.size)) }
-                    TableColumn("Last Used") { Text($0.lastAccessed?.formatted(date: .abbreviated, time: .omitted) ?? "-") }
-                }
-                VStack(alignment: .leading) {
-                    Text("Related Files").font(.headline)
-                    if let selected {
-                        ResultTable(items: selected.leftovers, selection: $viewModel.selectedItems)
-                        Button("Move Selected to Trash", systemImage: "trash") {
-                            viewModel.cleanSelected(from: selected.leftovers)
-                        }
-                        .disabled(viewModel.selectedItems.isEmpty)
-                        Button("Uninstall App", systemImage: "app.badge") {
-                            confirmingUninstall = true
-                        }
-                    } else {
-                        ContentUnavailableView("Select an app", systemImage: "app")
+
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("\(viewModel.applications.count) apps")
+                            .font(.headline)
+                        Spacer()
+                        Text(ByteFormatting.string(viewModel.applications.reduce(0) { $0 + $1.size }))
+                            .foregroundStyle(.secondary)
                     }
+                    .padding(.horizontal, 10)
+
+                    List(selection: $selectedApp) {
+                        ForEach(viewModel.applications) { app in
+                            ApplicationRow(app: app)
+                                .tag(app.id)
+                        }
+                    }
+                    .listStyle(.sidebar)
                 }
-                .frame(minWidth: 420)
+                .frame(minWidth: 320, idealWidth: 380, maxWidth: 460)
+                .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))
+
+                if let selected {
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(alignment: .center, spacing: 14) {
+                            AppIcon(url: selected.url, size: 64)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(selected.name)
+                                    .font(.title2.bold())
+                                    .lineLimit(1)
+                                Text(selected.bundleIdentifier ?? "No bundle identifier")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                            Spacer()
+                            Button("", systemImage: "folder") {
+                                NSWorkspace.shared.activateFileViewerSelecting([selected.url])
+                            }
+                            .help("Reveal in Finder")
+                            Button("", systemImage: "arrow.up.forward.app") {
+                                NSWorkspace.shared.open(selected.url)
+                            }
+                            .help("Open")
+                        }
+
+                        HStack(spacing: 10) {
+                            AppFact("Version", selected.version ?? "-")
+                            AppFact("Size", ByteFormatting.string(selected.size))
+                            AppFact("Last Used", selected.lastAccessed?.formatted(date: .abbreviated, time: .omitted) ?? "-")
+                            AppFact("Related", "\(selected.leftovers.count)")
+                        }
+
+                        Divider()
+
+                        HStack {
+                            Text("Related Files").font(.headline)
+                            Spacer()
+                            Button("Move Selected", systemImage: "trash") {
+                                viewModel.cleanSelected(from: selected.leftovers)
+                            }
+                            .disabled(viewModel.selectedItems.isEmpty)
+                            Button("Uninstall", systemImage: "app.badge") {
+                                confirmingUninstall = true
+                            }
+                        }
+
+                        if selected.leftovers.isEmpty {
+                            ContentUnavailableView("No related files found", systemImage: "checkmark.circle")
+                        } else {
+                            ResultTable(items: selected.leftovers, selection: $viewModel.selectedItems)
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(.background, in: RoundedRectangle(cornerRadius: 8))
+                } else {
+                    ContentUnavailableView("Select an app", systemImage: "app")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
         .padding(20)
+        .onChange(of: viewModel.applications) { _, apps in
+            if selectedApp == nil {
+                selectedApp = apps.first?.id
+            }
+        }
         .confirmationDialog("Move app to Trash?", isPresented: $confirmingUninstall) {
             Button("Move to Trash", role: .destructive) {
                 guard let selected else { return }
@@ -103,6 +165,65 @@ struct ApplicationsView: View {
         } message: {
             Text("The app bundle and checked related files move to Trash. Group containers remain Review only.")
         }
+    }
+}
+
+struct ApplicationRow: View {
+    let app: ApplicationInfo
+
+    var body: some View {
+        HStack(spacing: 10) {
+            AppIcon(url: app.url, size: 34)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(app.name)
+                    .font(.headline)
+                    .lineLimit(1)
+                HStack(spacing: 8) {
+                    Text(ByteFormatting.string(app.size))
+                    Text(app.version ?? "-")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct AppIcon: View {
+    let url: URL
+    let size: CGFloat
+
+    var body: some View {
+        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+            .resizable()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
+struct AppFact: View {
+    let title: String
+    let value: String
+
+    init(_ title: String, _ value: String) {
+        self.title = title
+        self.value = value
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.callout.monospacedDigit())
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 

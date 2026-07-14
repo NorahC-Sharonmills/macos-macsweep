@@ -34,21 +34,40 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
 struct MainWindowView: View {
     @StateObject private var viewModel = AppViewModel()
-    @State private var selection: SidebarItem? = .dashboard
+    @State private var selection: SidebarItem = .dashboard
 
     var body: some View {
         NavigationSplitView {
-            List(SidebarItem.allCases, selection: $selection) { item in
-                Label(item.rawValue, systemImage: item.icon)
-                    .accessibilityLabel(item.rawValue)
-                    .tag(item)
+            List(SidebarItem.allCases) { item in
+                Button {
+                    var transaction = Transaction()
+                    transaction.animation = nil
+                    withTransaction(transaction) {
+                        selection = item
+                    }
+                } label: {
+                    Label(item.rawValue, systemImage: item.icon)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 8)
+                .background(selection == item ? Color.accentColor.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 7))
+                .accessibilityLabel(item.rawValue)
             }
             .navigationTitle("Mac Deep Cleaner")
             .navigationSplitViewColumnWidth(min: 260, ideal: 300, max: 420)
         } detail: {
             Group {
-                switch selection ?? .dashboard {
-                case .dashboard: DashboardView(viewModel: viewModel) { selection = .storage }
+                switch selection {
+                case .dashboard: DashboardView(viewModel: viewModel) {
+                    var transaction = Transaction()
+                    transaction.animation = nil
+                    withTransaction(transaction) {
+                        selection = .storage
+                    }
+                }
                 case .storage: ItemListView(viewModel: viewModel, title: "Storage Analyzer", items: viewModel.storageItems, scan: viewModel.scanStorage, clean: viewModel.cleanSelected)
                 case .large: LargeFilesView(viewModel: viewModel)
                 case .cache: ItemListView(viewModel: viewModel, title: "Cache", items: viewModel.cacheItems, scan: viewModel.scanCache, clean: viewModel.cleanSelected)
@@ -60,6 +79,7 @@ struct MainWindowView: View {
                 case .settings: SettingsView(viewModel: viewModel)
                 }
             }
+            .transaction { $0.animation = nil }
             .toolbar {
                 ToolbarItemGroup {
                     if viewModel.isScanning {
